@@ -83,8 +83,8 @@ let blogOverviewResponse = [
 ]
 
 console.log(
-  match<any, Blog[] | 'parse-error' | 'server-error'>(blogOverviewResponse, 'parse-error')
-    .with({ errorMessage: String }, r => 'server-error')
+  match<any, Blog[] | Error>(blogOverviewResponse, new Error('client parse error'))
+    .with({ errorMessage: String }, r => new Error(r.errorMessage))
     .with([{ Id: Number, Title: String }], x => x.map(b => ({ id: b.Id, title: b.Title })))
     .run()
 )
