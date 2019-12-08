@@ -35,17 +35,23 @@ const match = <a, b>(value: a, otherwise: b, patterns: Array<[Pattern<a>, fun<a,
 type Pattern<a> = a extends number ? a | NumberConstructor :
   a extends string ? a | StringConstructor :
   a extends boolean ? a | BooleanConstructor :
+  a extends Array<infer aa> ? [Pattern<aa>] :
   { [k in keyof a]?: Pattern<a[k]> }
 
 type InvertPattern<p> = p extends NumberConstructor ? number :
   p extends StringConstructor ? string :
   p extends BooleanConstructor ? boolean :
+  p extends Array<infer pp> ? InvertPattern<pp>[] :
   { [k in keyof p]: InvertPattern<p[k]> }
 
 const match_pattern = <a>(value: a, pattern: Pattern<a>) => {
   if (pattern === String) return typeof (value) == 'string'
   if (pattern === Boolean) return typeof (value) == 'boolean'
   if (pattern === Number) return typeof (value) == 'number' && Number.isNaN(value) == false
+  if (Array.isArray(pattern)) {
+    if (!Array.isArray(value)) return false
+    return value.every(v => match_pattern(v, pattern[0]))
+  }
   if (typeof (value) != 'object') return value === pattern
   return Object.keys(pattern).every(k => pattern[k] == undefined ? false : match_pattern(value[k], pattern[k]))
 }
@@ -55,11 +61,11 @@ const o: () => Option<string> = () => ({ k: 'some', v: 'hi' })
 
 
 console.log(
-match(o(), "nope")
-  .with({ k: 'none' }, () => 'none')
-  .withWhen({ k: 'some' }, x => x.v == 'hi', () => "HI")
-  .with({ k: 'some' }, o => o.v)
-  .run()
+  match(o(), "nope")
+    .with({ k: 'none' }, () => 'none')
+    .withWhen({ k: 'some' }, x => x.v == 'hi', () => "HI")
+    .with({ k: 'some' }, o => o.v)
+    .run()
 )
 
 let httpResult: any // { errorMessage: string } | { Id: number, Title: string } // = ...
@@ -68,3 +74,16 @@ match(httpResult, { kind: "invalid data" })
   .with({ errorMessage: String }, r => ({ kind: 'error', message: r.errorMessage }))
   .with({ Id: Number, Title: String }, r => ({ kind: 'result', value: { id: r.Id, title: r.Title } }))
   .run()
+
+interface Blog { id: number, title: string}
+
+let blogOverviewResponse = [
+  {Id: 1, Title: 'hello'}, 
+  {Id: 2, Title: 'world'}
+]
+
+console.log(
+  match<any, Blog[]>(blogOverviewResponse, [])
+    .with([{Id: Number, Title: String}], x => x.map(b => ({id: b.Id, title: b.Title})))
+    .run()
+)
