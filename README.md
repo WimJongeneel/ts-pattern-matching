@@ -142,9 +142,9 @@ With record and type patterns in place our library has grown to a powerfull tool
 ```ts
 let httpResult: any = /* ... */
 
-match(httpResult, { kind: "invalid data" })
-  .with({ errorMessage: String }, r => ({ kind: 'error', message: r.errorMessage }))
-  .with({ Id: Number, Title: String }, r => ({ kind: 'result', value: { id: r.Id, title: r.Title } }))
+match<any, Blog | Error>(httpResult, new Error('client parse error'))
+  .with({ errorMessage: String }, r => new Error(r.errorMessage))
+  .with({ Id: Number, Title: String }, r => ({ id: r.Id, title: r.Title }))
   .run()
 ```
 
@@ -155,13 +155,15 @@ The last feature we will be adding are array patterns. Array patterns allow us t
 We will again start by updating our types and update the implementation later on. To create the type for the array pattern we will use the `infer` keyword to get the inner type of the array. With this type we will define a singleton array with a pattern for the inner type. The `InvertPattern` type will use the same features to revert this process and make sure we still infer the correct types in the expression.
 
 ```ts
-type Pattern<a> = a extends number ? a | NumberConstructor :
+type Pattern<a> =
+  a extends number ? a | NumberConstructor :
   a extends string ? a | StringConstructor :
   a extends boolean ? a | BooleanConstructor :
   a extends Array<infer aa> ? [Pattern<aa>] :
   { [k in keyof a]?: Pattern<a[k]> }
 
-type InvertPattern<p> = p extends NumberConstructor ? number :
+type InvertPattern<p> =
+  p extends NumberConstructor ? number :
   p extends StringConstructor ? string :
   p extends BooleanConstructor ? boolean :
   p extends Array<infer pp> ? InvertPattern<pp>[] :
@@ -194,7 +196,8 @@ let blogOverviewResponse: any = [
   {Id: 2, Title: 'world'}
 ]
 
-match<any, Blog[]>(blogOverviewResponse, [])
+match<any, Blog[] | Error>(blogOverviewResponse, new Error('client parse error'))
+  .with({ errorMessage: String }, r => new Error(r.errorMessage))
   .with([{Id: Number, Title: String}], x => x.map(b => ({id: b.Id, title: b.Title})))
   .run()
 ```

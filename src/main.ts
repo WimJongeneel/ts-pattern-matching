@@ -75,15 +75,16 @@ match(httpResult, { kind: "invalid data" })
   .with({ Id: Number, Title: String }, r => ({ kind: 'result', value: { id: r.Id, title: r.Title } }))
   .run()
 
-interface Blog { id: number, title: string}
+interface Blog { id: number, title: string }
 
 let blogOverviewResponse = [
-  {Id: 1, Title: 'hello'}, 
-  {Id: 2, Title: 'world'}
+  { Id: 1, Title: 'hello' },
+  { Id: 2, Title: 'world' }
 ]
 
 console.log(
-  match<any, Blog[]>(blogOverviewResponse, [])
-    .with([{Id: Number, Title: String}], x => x.map(b => ({id: b.Id, title: b.Title})))
+  match<any, Blog[] | 'parse-error' | 'server-error'>(blogOverviewResponse, 'parse-error')
+    .with({ errorMessage: String }, r => 'server-error')
+    .with([{ Id: Number, Title: String }], x => x.map(b => ({ id: b.Id, title: b.Title })))
     .run()
 )
