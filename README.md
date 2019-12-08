@@ -25,9 +25,9 @@ This implementation  is at te moment nothing more than a (complicated) lookup ta
 
 ```ts
 match(1)
-  .with(0, () => '000')
-  .with(1, v => v * 2)
-  .with(2, v => v * v)
+  .with(0,    v => '000')
+  .with(1,    v => v * 2)
+  .with(2,    v => v * v)
   .otherwise(() => 'nope')
   .run()
 ```
@@ -50,7 +50,7 @@ match({ x:1, y: 2 })
   .with({ x: 2, y: 2 }, () => 'x and y are 2')
   .with({ x: 2 },       () => 'x is 2 and we don`t mind y')
   .with({ y: 1 },       () => 'y is 2 and we don`t mind x')
-  .otherwise(() => 'no match')
+  .otherwise(           () => 'no match')
   .run()
 ```
 
@@ -147,8 +147,8 @@ let httpResult: any = /* ... */
 
 match<any, Blog | Error>(httpResult)
   .with({ Id: Number, Title: String }, r => ({ id: r.Id, title: r.Title }))
-  .with({ errorMessage: String }, r => new Error(r.errorMessage))
-  .otherwise(() => new Error('client parse error'))
+  .with({ errorMessage: String },      r => new Error(r.errorMessage))
+  .otherwise(                         () => new Error('client parse error'))
   .run()
 ```
 
@@ -201,9 +201,9 @@ let blogOverviewResponse: any = [
 ]
 
 match<any, Blog[] | Error>(blogOverviewResponse)
-  .with([{Id: Number, Title: String}], x => x.map(b => ({id: b.Id, title: b.Title})))
-  .with({ errorMessage: String }, r => new Error(r.errorMessage))
-  .otherwise(() => new Error('client parse error'))
+  .with([{Id: Number, Title: String}], r => r.map(b => ({id: b.Id, title: b.Title})))
+  .with({ errorMessage: String },      r => new Error(r.errorMessage))
+  .otherwise(                         () => new Error('client parse error'))
   .run()
 ```
 
