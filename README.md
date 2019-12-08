@@ -4,15 +4,16 @@ Pattern matching allows programmers to compare data with defined structures to e
 
 ## Using a Builder
 
-The start of our library is a builder API that allows us to write fluent style code when adding patterns. We pass the `match` function the value and the default fallback value that will be returned when no pattern matches (like `_` in F# and Haskell). This returns a builder on which we can call `with` to add a pattern or can call the `run` function to find the matching pattern and execute its expression.
+The start of our library is a builder API that allows us to write fluent style code when adding patterns. We pass the `match` function the value that we whant to match. This returns a builder on which we can call `with` to add a pattern, can call `otherwise` to set the fallback value and can call `run` to find the matching pattern and execute its expression.
 
 ```ts
-const match = <a, b>(value: a, otherwise: b, patterns: Array<[a, fun<a, b>]> = []) => ({
+const match = <a, b>(value: a, otherwise: () => b, patterns: Array<[a, fun<a, b>]> = []) => ({
   with: (pattern: a, expr: fun<a, b>) =>
     match(value, otherwise, [...patterns, [pattern, expr]]),
+  otherwise: (otherwise: () => b) => match(value, otherwise, patterns)
   run: (): b => {
     const p = patterns.find(p => match_pattern(value, p[0]))
-    if (p == undefined) return otherwise
+    if (p == undefined) return otherwise()
     return p[1](value)
   }
 })
@@ -23,10 +24,11 @@ const match_pattern = <a>(value: a, pattern: a) => a === a
 This implementation  is at te moment nothing more than a (complicated) lookup table, but we will be adding all the promised features futher down the line. An example of how to use our library:
 
 ```ts
-match(1, "nope")
+match(1)
   .with(0, () => '000')
   .with(1, v => v * 2)
   .with(2, v => v * v)
+  .otherwise(() => 'nope')
   .run()
 ```
 
@@ -44,10 +46,11 @@ const match_pattern = <a>(value: a, pattern: Pattern<a>) => typeof(value) != 'ob
 Using this feature will look like this:
 
 ```ts
-match({ x:1, y: 2 }, 'no match')
+match({ x:1, y: 2 })
   .with({ x: 2, y: 2 }, () => 'x and y are 2')
   .with({ x: 2 },       () => 'x is 2 and we don`t mind y')
   .with({ y: 1 },       () => 'y is 2 and we don`t mind x')
+  .otherwise(() => 'no match')
   .run()
 ```
 
@@ -62,7 +65,7 @@ type Option<a> = { kind: 'none' } | { kind: 'some', value: a }
 
 let val: Option<string> = { kind: 'some', value: 'hello' }
 
-match(val, '')
+match(val)
   .with({ kind: 'some' }, o => o.value)
   .run()
 ```
@@ -142,9 +145,10 @@ With record and type patterns in place our library has grown to a powerfull tool
 ```ts
 let httpResult: any = /* ... */
 
-match<any, Blog | Error>(httpResult, new Error('client parse error'))
-  .with({ errorMessage: String }, r => new Error(r.errorMessage))
+match<any, Blog | Error>(httpResult)
   .with({ Id: Number, Title: String }, r => ({ id: r.Id, title: r.Title }))
+  .with({ errorMessage: String }, r => new Error(r.errorMessage))
+  .otherwise(() => new Error('client parse error'))
   .run()
 ```
 
@@ -196,9 +200,10 @@ let blogOverviewResponse: any = [
   {Id: 2, Title: 'world'}
 ]
 
-match<any, Blog[] | Error>(blogOverviewResponse, new Error('client parse error'))
-  .with({ errorMessage: String }, r => new Error(r.errorMessage))
+match<any, Blog[] | Error>(blogOverviewResponse)
   .with([{Id: Number, Title: String}], x => x.map(b => ({id: b.Id, title: b.Title})))
+  .with({ errorMessage: String }, r => new Error(r.errorMessage))
+  .otherwise(() => new Error('client parse error'))
   .run()
 ```
 
