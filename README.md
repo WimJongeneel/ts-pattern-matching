@@ -34,7 +34,7 @@ match(1)
 
 ## Record Patterns
 
-The first extension we will add are record patterns. Record patterns allow us to create patterns that describe the stucture of an object and will match when the input data matches the provided structure. A record pattern itself is an object where the values are the patterns for their respective keys. Nesting is of course sopported. To implement this feature we will introduce a type `Pattern<a>` that will describe the valid patterns for a given type `a`. For now the implementation is the same as the `Partial` type of the standard library, but again we will be expanding this type later on. To implement this feature we will also update `match_pattern` to support objects.
+The first extension we will add are record patterns. Record patterns allow us to create patterns that describe the stucture of an object and will match when the input data matches the provided structure. A record pattern itself is an object where the values are the patterns for their respective keys. Nesting is of course supported. To implement this feature we will introduce a type `Pattern<a>` that will describe the valid patterns for a given type `a`. For now the implementation is the same as the `Partial` type of the standard library, but again we will be expanding this type later on. To implement this feature we will also update `match_pattern` to support objects.
 
 ```ts
 type Pattern<a> = { [ k in keyof a ]?: Pattern<a[k]> }
@@ -58,7 +58,7 @@ match({ x:1, y: 2 })
 
 ## Type Inference
 
-One of the really good things about TypeScript is the flow typesystem that narrows types down when conditions rule out possible values. We would like this to also happend with our pattern matching as well. Let's defining an option monad to serve as an example of this and see how we can deal with this challenge:
+One of the really good things about TypeScript is the flow typesystem that narrows types down when conditions rule out possible values. We would like this to also happen with our pattern matching as well. Let's defining an option monad to serve as an example of this and see how we can deal with this challenge:
 
 ```ts
 type Option<a> = { kind: 'none' } | { kind: 'some', value: a }
