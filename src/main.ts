@@ -1,25 +1,27 @@
 type fun<a, b> = (_: a) => b
 
-type extract<a, b> = b extends a ? b : Extract<a, b>
+type extract<a, b> = b extends a ? b : a extends b ? a : never
+
+type exclude<a, b> = any extends a ? never : Exclude<a, b>
 
 const match = <a, b>(value: a, otherwise: () => b = () => null, patterns: Array<[Pattern<a>, fun<a, boolean>, fun<a, b>, 'default' | 'negated']> = []) => ({
   with: <p extends Pattern<a>>(
     pattern: p,
     expr: fun<extract<a, InvertPattern<typeof pattern>>, b>
-  ) => match(value, otherwise, [...patterns, [pattern, () => true, expr as any, 'default']]),
+  ) => match(value, otherwise, [...patterns, [pattern, () => true, expr, 'default']]),
   withWhen: <p extends Pattern<a>>(
     pattern: p,
     when: fun<extract<a, InvertPattern<typeof pattern>>, boolean>,
     expr: fun<extract<a, InvertPattern<typeof pattern>>, b>
-  ) => match(value, otherwise, [...patterns, [pattern, when as any, expr as any, 'default']]),
+  ) => match(value, otherwise, [...patterns, [pattern, when, expr, 'default']]),
   withNot: <p extends Pattern<a>>(
     pattern: p,
-    expr: fun<Exclude<a, InvertPattern<typeof pattern>>, b>
+    expr: fun<exclude<a, InvertPattern<typeof pattern>>, b>
   ) => match(value, otherwise, [...patterns, [pattern, () => true, expr, 'negated']]),
   withNotWhen: <p extends Pattern<a>>(
     pattern: p,
-    when: fun<Exclude<a, InvertPattern<typeof pattern>>, boolean>,
-    expr: fun<Exclude<a, InvertPattern<typeof pattern>>, b>
+    when: fun<exclude<a, InvertPattern<typeof pattern>>, boolean>,
+    expr: fun<exclude<a, InvertPattern<typeof pattern>>, b>
   ) => match(value, otherwise, [...patterns, [pattern, when, expr, 'negated']]),
   otherwise: (otherwise: () => b) => match(value, otherwise, patterns),
   run: (): b => {
@@ -76,8 +78,8 @@ interface Blog { id: number, title: string }
 
 match<any, Blog | Error>(httpResult)
   .with({ Id: Number, Title: String }, r => ({ id: r.Id, title: r.Title }))
-  .with({ errorMessage: String },      r => new Error(r.errorMessage))
-  .otherwise(                         () => new Error('client parse error'))
+  .with({ errorMessage: String }, r => new Error(r.errorMessage))
+  .otherwise(() => new Error('client parse error'))
   .run()
 
 
@@ -96,20 +98,20 @@ console.log(
 
 
 
+match<Option<string>, string>(o())
+  .withNot({k: 'none'}, x => x.v)
 
-
-
-
-
+match<any, string>(httpResult)
+  .withNot({Id: String}, x => x)
 
 
 
 
 
 type x = number extends any ? true : false
-type a = any extends number ? true : false
+type a = 1 extends number ? any extends number ? true : false : never
 
-interface i {x: 1}
+interface i { x: 1 }
 
 type z = i extends any ? true : false
 type v = any extends i ? true : false
