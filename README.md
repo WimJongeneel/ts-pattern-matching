@@ -83,7 +83,7 @@ We introduced a new generic type `p` that has to be a subset of `pattern<a>`. No
 
 [Screenshot to proof it]
 
-Wshile this solution adds a lot of power and safety to our library when dealing with typed (discrimated) unions, there is one major problem with using the `Extract` type. If the input type of our pattern is `any` there will not be any type inference and the input type will be mapped to `never`. This means that in its current state the library is not usable for parsing untyped data. The following screenshot highligths the problem:
+While this solution adds a lot of power and safety to our library when dealing with typed (discrimated) unions, there is one major problem with using the `Extract` type. If the input type of our pattern is `any` there will not be any type inference and the input type will be mapped to `never`. This means that in its current state the library is not usable for parsing untyped data. The following screenshot highligths the problem:
 
 [screenhot where any goes to never]
 
