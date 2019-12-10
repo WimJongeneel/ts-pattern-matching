@@ -58,7 +58,7 @@ match({ x:1, y: 2 })
 
 ## Type Inference
 
-One of the really good things about TypeScript is the flow typesystem that narrows types down when conditions rule out possible values. We would like this to also happen with our pattern matching as well. Let's defining an option monad to serve as an example of this and see how we can deal with this challenge:
+One of the really good things about TypeScript is the flow typesystem that narrows types down when conditions rule out possible values. We would like this to also happen with our pattern matching as well. Let's defining an Option monad to as an example:
 
 ```ts
 type Option<a> = { kind: 'none' } | { kind: 'some', value: a }
@@ -70,7 +70,7 @@ match(val)
   .run()
 ```
 
-This code is now giving a type error because the compiler has no way of figuring out that the pattern implices that the option is a some and contains a value. Luckily TypeScript comes with a set of handy features to deal with this. We will be using `typeof` to get the exact type of the pattern that the user provided and use `Extract` to narrow down the type of `a`. The code looks as follows:
+This code is now giving a type error because the compiler has no way of figuring out that the pattern implices that the option is a Some and contains a value. Luckily TypeScript comes with a powerfull typesystem that provides the tools we need to solve chalanges like this. We will be using the `typeof` operator to get the exact type of the pattern that the user provided and use `Extract` to narrow down the type of `a`. The code looks as follows:
 
 ```ts
 with: <p extends Pattern<a>>(
@@ -79,21 +79,23 @@ with: <p extends Pattern<a>>(
 ) => match(value, otherwise, [...patterns, [pattern, expr]])
 ```
 
-Here you see that the pattern is now of a new type `p` that has to be a `pattern<a>`. This is so that `p` can be subset of `Pattern<a>` and can be used to narrow `a` down to subset of `a`. The `typeof` operator is used because we need to force TypeScript to inference the type of the provided pattern, as we want the smallest possible subset and not the full `Pattern<a>` type. Otherwise we will won't be able to narrow both `p` and `a` down to a subset of their types. With those changes our example with option will have the correct types infered as proven by this screenshot:
+We introduced a new generic type `p` that has to be a subset of `pattern<a>`. Now we can use this stricter subset of `p` to narrow down `a`. The `typeof` operator is used to force TypeScript to inference the type of the provided pattern, as we want the smallest possible subset and not the full `Pattern<a>` type. The entire quality of our type inference depends on how good we are in narrowing down `p`! With those changes our example with option will have the correct types infered as proven by this screenshot:
 
 [Screenshot to proof it]
 
-While this solution adds a lot of power and safety to our library when dealing with typed (discrimated) unions, there is one major problem with using the `Extract` type. If the input type of our pattern is `any` there will not be any type inference and the input type will be mapped to `never`. This means that in its current state the library is not usable for parsing untypes data. The following screenshot highligths the problem.
+Wshile this solution adds a lot of power and safety to our library when dealing with typed (discrimated) unions, there is one major problem with using the `Extract` type. If the input type of our pattern is `any` there will not be any type inference and the input type will be mapped to `never`. This means that in its current state the library is not usable for parsing untyped data. The following screenshot highligths the problem:
 
 [screenhot where any goes to never]
 
-The solution to go with here is to create a custom `Extract` type that checks if the input type is not `any`. When the input type is `any`, we directly return the type of the pattern without checking for any assignibilty between all the posible types.
+This issue has to do with some of the more obscure behaviour of the `any` type with regards to `extends`. Normally if we have two types `a` and `b` (that are not generic!), `a` will either extend `b` or `a` will not extend `b`. Meaning that `a extends b ? true : false` will either be of type `true` or `false`. There is only one exception to this rule: `any extends number ? true : false` is of type `boolean`, meaning that TypeScript was unable to pick a branch. This somewhat counterinitiative behavior (one would expect that no type extends any because any includes every posible value) forces us to create a custom `extract` type that deals with having `any` as input type. When the input type is `any`, we directly return the type of the pattern without checking for any assignibilty between all the posible types.
 
 ```ts
 type extract<a, b> = b extends a ? b : Extract<a, b>
 ```
 
-The `b extends a` check will be true when `a` is any. When `b` is not `any` we still want to use the `Extract` type from the standard libery for its ability to narrow down the cases of a discriminated union (like we saw with the `Option` example). With this new `extract` type we have type inference that works on both typed and untyped data.
+> Based on this theory one will asume that `a extends any` is true, and `number extends any ? true : false` is indeed of type `true`.
+
+The `b extends a` check will be only true when `a` is any. When `b` is not `any` we still want to use the `Extract` type from the standard libery for its ability to narrow down the cases of a discriminated union (like we saw with the `Option` example). With this new `extract` type we have type inference that works on both typed and untyped data.
 
 ## Type Patterns
 

@@ -72,13 +72,14 @@ console.log(
 
 let httpResult: any // { errorMessage: string } | { Id: number, Title: string } // = ...
 
-match(httpResult)
-  .with({ errorMessage: String }, r => ({ kind: 'error', message: r.errorMessage }))
-  .with({ Id: Number, Title: String }, r => ({ kind: 'result', value: { id: r.Id, title: r.Title } }))
-  .otherwise(() => ({ kind: "invalid data" }))
+interface Blog { id: number, title: string }
+
+match<any, Blog | Error>(httpResult)
+  .with({ Id: Number, Title: String }, r => ({ id: r.Id, title: r.Title }))
+  .with({ errorMessage: String },      r => new Error(r.errorMessage))
+  .otherwise(                         () => new Error('client parse error'))
   .run()
 
-interface Blog { id: number, title: string }
 
 let blogOverviewResponse: any = [
   { Id: 1, Title: 'hello' },
@@ -92,3 +93,26 @@ console.log(
     .otherwise(() => new Error('client parse error'))
     .run()
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+type x = number extends any ? true : false
+type a = any extends number ? true : false
+
+interface i {x: 1}
+
+type z = i extends any ? true : false
+type v = any extends i ? true : false
+
+type q<a, b> = Extract<a, b>
+type w = q<number, any>
