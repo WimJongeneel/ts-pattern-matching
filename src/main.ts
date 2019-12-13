@@ -1,29 +1,83 @@
-type fun<a, b> = (_: a) => b
+export type Fun<a, b> = (_: a) => b
 
-type extract<a, b> = b extends a ? b : a extends b ? a : never
+export type ListUpperBound<a, b> = b extends a ? b : a extends b ? a : never
 
-type exclude<a, b> = any extends a ? never : Exclude<a, b>
+export type ListLowerBound<a, b> = any extends a ? never : a extends b ? never : a
 
-const match = <a, b>(value: a, otherwise: () => b = () => null, patterns: Array<[Pattern<a>, fun<a, boolean>, fun<a, b>, 'default' | 'negated']> = []) => ({
+export type Pattern<a> = a extends number ? a | NumberConstructor :
+  a extends string ? a | StringConstructor :
+  a extends boolean ? a | BooleanConstructor :
+  a extends Array<infer aa> ? [Pattern<aa>] :
+  { [k in keyof a]?: Pattern<a[k]> }
+
+export type InvertPattern<p> = p extends NumberConstructor ? number :
+  p extends StringConstructor ? string :
+  p extends BooleanConstructor ? boolean :
+  p extends Array<infer pp> ? InvertPattern<pp>[] :
+  { [k in keyof p]: InvertPattern<p[k]> }
+
+/**
+ * Constructs the builder API
+ * @param value       the input value
+ * @param otherwise   optional - a function that creates the fallback value
+ * @param patterns    optional - an array with the patterns
+ */
+export const match = <a, b>(value: a) => builder<a, b>(value)(() => undefined, [])
+
+const builder = <a, b>(value: a) => (otherwise: () => b = () => null, patterns: Array<[Pattern<a>, Fun<a, boolean>, Fun<a, b>, 'default' | 'negated']> = []) => ({
+  /**
+   * Adds a pattern
+   * @param pattern   the pattern to test with
+   * @param expr      the function to create the result with
+   */
   with: <p extends Pattern<a>>(
     pattern: p,
-    expr: fun<extract<a, InvertPattern<typeof pattern>>, b>
-  ) => match(value, otherwise, [...patterns, [pattern, () => true, expr, 'default']]),
+    expr: Fun<ListUpperBound<a, InvertPattern<typeof pattern>>, b>
+  ) => builder(value)(otherwise, [...patterns, [pattern, () => true, expr, 'default']]),
+
+  /**
+   * Adds a pattern with an additional predicate
+   * @param pattern   the pattern to test with
+   * @param when      a predicate that has to be true, outside the mathing of the pattern
+   * @param expr      the function to create the result with
+   */
   withWhen: <p extends Pattern<a>>(
     pattern: p,
-    when: fun<extract<a, InvertPattern<typeof pattern>>, boolean>,
-    expr: fun<extract<a, InvertPattern<typeof pattern>>, b>
-  ) => match(value, otherwise, [...patterns, [pattern, when, expr, 'default']]),
+    when: Fun<ListUpperBound<a, InvertPattern<typeof pattern>>, boolean>,
+    expr: Fun<ListUpperBound<a, InvertPattern<typeof pattern>>, b>
+  ) => builder(value)(otherwise, [...patterns, [pattern, when, expr, 'default']]),
+
+  /**
+   * Adds a negated pattern. Negated patterns don't work with `any` as input
+   * @param pattern   the pattern to test with
+   * @param expr      the function to create the result with
+   */
   withNot: <p extends Pattern<a>>(
     pattern: p,
-    expr: fun<exclude<a, InvertPattern<typeof pattern>>, b>
-  ) => match(value, otherwise, [...patterns, [pattern, () => true, expr, 'negated']]),
+    expr: Fun<ListLowerBound<a, InvertPattern<typeof pattern>>, b>
+  ) => builder(value)(otherwise, [...patterns, [pattern, () => true, expr, 'negated']]),
+
+  /**
+   * Adds a negated pattern with an additional predicate. Negated patterns don't work with `any` as input
+   * @param pattern   the pattern to test with
+   * @param when      a predicate that has to be true, outside the mathing of the pattern
+   * @param expr      the function to create the result with
+   */
   withNotWhen: <p extends Pattern<a>>(
     pattern: p,
-    when: fun<exclude<a, InvertPattern<typeof pattern>>, boolean>,
-    expr: fun<exclude<a, InvertPattern<typeof pattern>>, b>
-  ) => match(value, otherwise, [...patterns, [pattern, when, expr, 'negated']]),
-  otherwise: (otherwise: () => b) => match(value, otherwise, patterns),
+    when: Fun<ListLowerBound<a, InvertPattern<typeof pattern>>, boolean>,
+    expr: Fun<ListLowerBound<a, InvertPattern<typeof pattern>>, b>
+  ) => builder(value)(otherwise, [...patterns, [pattern, when, expr, 'negated']]),
+
+  /**
+   * Sets the faalback value for when no pattern matches
+   * @param otherwise   a function to create the result
+   */
+  otherwise: (otherwise: () => b) => builder(value)(otherwise, patterns),
+
+  /**
+   * Runs the match and return the result of the first matching pattern
+   */
   run: (): b => {
     const p = patterns.find(p => {
       if (p[1](value) == false) return false
@@ -34,18 +88,6 @@ const match = <a, b>(value: a, otherwise: () => b = () => null, patterns: Array<
     return p[2](value)
   }
 })
-
-type Pattern<a> = a extends number ? a | NumberConstructor :
-  a extends string ? a | StringConstructor :
-  a extends boolean ? a | BooleanConstructor :
-  a extends Array<infer aa> ? [Pattern<aa>] :
-  { [k in keyof a]?: Pattern<a[k]> }
-
-type InvertPattern<p> = p extends NumberConstructor ? number :
-  p extends StringConstructor ? string :
-  p extends BooleanConstructor ? boolean :
-  p extends Array<infer pp> ? InvertPattern<pp>[] :
-  { [k in keyof p]: InvertPattern<p[k]> }
 
 const match_pattern = <a>(value: a, pattern: Pattern<a>) => {
   if (pattern === String) return typeof (value) == 'string'
@@ -58,63 +100,3 @@ const match_pattern = <a>(value: a, pattern: Pattern<a>) => {
   if (typeof (value) != 'object') return value === pattern
   return Object.keys(pattern).every(k => pattern[k] == undefined ? false : match_pattern(value[k], pattern[k]))
 }
-
-type Option<a> = { k: 'none' } | { k: 'some', v: a }
-const o: () => Option<string> = () => ({ k: 'some', v: 'hi' })
-
-
-console.log(
-  match(o())
-    .with({ k: 'none' }, () => 'none')
-    .withWhen({ k: 'some' }, x => x.v == 'hi', () => "HI")
-    .with({ k: 'some' }, o => o.v)
-    .otherwise(() => 'nope')
-    .run()
-)
-
-let httpResult: any // { errorMessage: string } | { Id: number, Title: string } // = ...
-
-interface Blog { id: number, title: string }
-
-match<any, Blog | Error>(httpResult)
-  .with({ Id: Number, Title: String }, r => ({ id: r.Id, title: r.Title }))
-  .with({ errorMessage: String }, r => new Error(r.errorMessage))
-  .otherwise(() => new Error('client parse error'))
-  .run()
-
-
-let blogOverviewResponse: any = [
-  { Id: 1, Title: 'hello' },
-  { Id: 2, Title: 'world' }
-]
-
-console.log(
-  match<any, Blog[] | Error>(blogOverviewResponse)
-    .with([{ Id: Number, Title: String }], x => x.map(b => ({ id: b.Id, title: b.Title })))
-    .with({ errorMessage: String }, r => new Error(r.errorMessage))
-    .otherwise(() => new Error('client parse error'))
-    .run()
-)
-
-
-
-match<Option<string>, string>(o())
-  .withNot({k: 'none'}, x => x.v)
-
-match<any, string>(httpResult)
-  .withNot({Id: String}, x => x)
-
-
-
-
-
-type x = number extends any ? true : false
-type a = 1 extends number ? any extends number ? true : false : never
-
-interface i { x: 1 }
-
-type z = i extends any ? true : false
-type v = any extends i ? true : false
-
-type q<a, b> = Extract<a, b>
-type w = q<number, any>
