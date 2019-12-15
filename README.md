@@ -1,8 +1,22 @@
 # Pattern Matching for TypeScript
 
-Paattern matching allows programmers to compare data with defined structures to easily pick one of the available expressions. Many languages that are designed as ‘functional programming languages’ have built-in keywords for pattern matching. Well know examples are F# (match … with) or Haskell (case … of). One language that works very well with functional programming but lacks those features is TypeScript. This library adds support pattern matching to TypeScript. 
+Pattern matching allows programmers to compare data with defined structures to easily pick one of the available expressions. Many languages that are designed as ‘functional programming languages’ have built-in keywords for pattern matching. Well know examples are F# (match … with) or Haskell (case … of). One language that works very well with functional programming but lacks those features is TypeScript. This library adds support pattern matching to TypeScript. 
 
 Read the [article](https://medium.com/@wim.jongeneel1/pattern-matching-in-typescript-with-record-and-wildcard-patterns-6097dd4e471d) about this library for more context.
+
+## Install
+
+**yarn**
+```sh
+yarn add typescript-pattern-matching
+```
+
+**npm**
+```sh
+npm -i --save typescript-pattern-matching
+```
+
+This library need `TypeScript 3.7.3` or higher to fully function.
 
 ## Features
 
