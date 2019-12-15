@@ -32,7 +32,7 @@ const builder = <a, b>(value: a) => (otherwise: () => b = () => null, patterns: 
    */
   with: <p extends Pattern<a>>(
     pattern: p,
-    expr: Fun<Extract<a, InvertPattern<typeof pattern>>, b>
+    expr: Fun<ListUpperBound<a, InvertPattern<typeof pattern>>, b>
   ) => builder(value)(otherwise, [...patterns, [pattern, () => true, expr, 'default']]),
 
   /**
@@ -100,22 +100,3 @@ const match_pattern = <a>(value: a, pattern: Pattern<a>) => {
   if (typeof (value) != 'object') return value === pattern
   return Object.keys(pattern).every(k => pattern[k] == undefined ? false : match_pattern(value[k], pattern[k]))
 }
-
-type Option<a> = { kind: 'none' } | { kind: 'some', value: a }
-
-let val: Option<string> = { kind: 'some', value: 'hello' }
-
-match(val)
-  .with({ kind: 'some' }, o => o.value)
-  .otherwise(() => 'no value')
-  .run()
-
-interface Blog { id: number }
-
-let httpResult: any = null
-
-match<any, Blog | Error>(httpResult)
-  .with({ Id: Number}, r => ({ id: r.Id }))
-  .with({ error: String }, r => new Error(r.errorMessage))
-  .otherwise(() => new Error('Client parse error'))
-  .run()

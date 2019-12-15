@@ -1,5 +1,5 @@
 {
-  "name": "ts-pattern-matching",
+  "name": "typescript-pattern-matching",
   "description": "Pattern matching for TypeScript",
   "version": "1.0.0",
   "main": "build/main.js",
