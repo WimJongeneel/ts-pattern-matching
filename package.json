@@ -20,6 +20,12 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@types/chai": "^4.2.11",
+    "@types/mocha": "^7.0.2",
+    "chai": "^4.2.0",
+    "mocha": "^8.0.1",
+    "ts-node": "^8.10.2",
+    "tsconfig-paths": "^3.9.0",
     "typescript": "^3.7.3"
   },
   "repository": {
@@ -27,6 +33,7 @@
     "url": "https://github.com/WimJongeneel/ts-pattern-matching"
   },
   "scripts": {
-    "prepublishOnly" : "yarn tsc -d"
+    "prepublishOnly": "yarn tsc -d",
+    "test": "mocha --config mocharc.js -R spec"
   }
 }
