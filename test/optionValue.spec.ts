@@ -34,7 +34,7 @@ describe("Option Example", () => {
                 .with({ kind: "none" }, o => o.value)
                 .run();
 
-            expect(result).to.be.undefined;
+            expect(result).to.be.null;
         });
 
         it("should evaluate the otherwise expression", () => {
