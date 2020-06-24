@@ -24,6 +24,7 @@
     "@types/mocha": "^7.0.2",
     "chai": "^4.2.0",
     "mocha": "^8.0.1",
+    "prettier": "^2.0.5",
     "ts-node": "^8.10.2",
     "tsconfig-paths": "^3.9.0",
     "typescript": "^3.7.3"
@@ -34,6 +35,8 @@
   },
   "scripts": {
     "prepublishOnly": "yarn tsc -d",
-    "test": "mocha --config mocharc.js -R spec"
+    "test": "mocha --config mocharc.js -R spec",
+    "build": "tsc -d",
+    "prettier": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
   }
 }
