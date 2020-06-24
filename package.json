@@ -36,7 +36,8 @@
   "scripts": {
     "prepublishOnly": "yarn tsc -d",
     "test": "mocha --config mocharc.js -R spec",
-    "build": "tsc -d",
-    "prettier": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
+    "build": "tsc --project tsconfig.json",
+    "prettier": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "watch": "tsc --project tsconfig.json --watch"
   }
 }

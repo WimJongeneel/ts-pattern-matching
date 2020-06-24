@@ -87,23 +87,33 @@ const builder = <a, b, c = null>(value: a) => (
      */
     run: (): b | c => {
         const p = patterns.find(p => {
-            if (p[1](value) == false) return false;
-            if (p[3] == "default") return match_pattern(value, p[0]);
+            if (p[1](value) === false) return false;
+            if (p[3] === "default") return match_pattern(value, p[0]);
             return !match_pattern(value, p[0]);
         });
-        if (p == undefined) return otherwise();
+        if (p === undefined) return otherwise();
         return p[2](value);
     },
 });
 
-const match_pattern = <a>(value: a, pattern: Pattern<a>) => {
-    if (pattern === String) return typeof value == "string";
-    if (pattern === Boolean) return typeof value == "boolean";
-    if (pattern === Number) return typeof value == "number" && Number.isNaN(value) == false;
+const match_pattern = <a>(value: a, pattern: Pattern<a>): boolean => {
+    if (pattern === String) {
+        return typeof value === "string";
+    }
+    if (pattern === Boolean) {
+        return typeof value === "boolean";
+    }
+    if (pattern === Number) {
+        return typeof value === "number" && Number.isNaN(value) === false;
+    }
     if (Array.isArray(pattern)) {
         if (!Array.isArray(value)) return false;
         return value.every(v => match_pattern(v, pattern[0]));
     }
-    if (typeof value != "object") return value === pattern;
-    return Object.keys(pattern).every(k => (pattern[k] == undefined ? false : match_pattern(value[k], pattern[k])));
+    if (typeof value !== "object") {
+        return value === pattern;
+    }
+    return Object.keys(pattern).every(k => {
+        return pattern[k] === undefined ? false : match_pattern(value[k], pattern[k]);
+    });
 };
