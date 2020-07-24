@@ -24,7 +24,10 @@
     "@types/mocha": "^7.0.2",
     "chai": "^4.2.0",
     "mocha": "^8.0.1",
+    "npm-run-all": "^4.1.5",
+    "onchange": "^7.0.2",
     "prettier": "^2.0.5",
+    "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
     "tsconfig-paths": "^3.9.0",
     "typescript": "^3.7.3"
@@ -34,10 +37,18 @@
     "url": "https://github.com/WimJongeneel/ts-pattern-matching"
   },
   "scripts": {
-    "prepublishOnly": "yarn tsc -d",
-    "test": "mocha --config mocharc.js -R spec",
-    "build": "tsc --project tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "clean": "rimraf build",
+    "tsc": "tsc --project tsconfig.json",
     "prettier": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "watch": "tsc --project tsconfig.json --watch"
+    "mocha": "mocha --config mocharc.js",
+    "test": "npm run mocha",
+    "test:spec": "npm run mocha -- -R spec",
+    "prebuild": "npm run clean",
+    "build": "npm run tsc -- -d",
+    "watch:prettier": "onchange \"src/**/*.ts\" -- prettier --write {{changed}}",
+    "watch:ts": "npm run tsc -- --watch",
+    "prewatch": "npm run clean",
+    "watch": "npm-run-all --parallel watch:**"
   }
 }
